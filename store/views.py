@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, render
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Q
 
 from cart.models import CartItem
 from .models import Product
@@ -44,3 +45,27 @@ def product_details(request, category_slug, product_slug):
     }
 
     return render(request, 'store/product_details.html', context)
+
+
+def search(request):
+
+    if 'keyword' in request.GET:
+        keyword = request.GET.get('keyword')
+
+        if keyword:
+            products = Product.objects.filter(Q(description__icontains = keyword) | Q(name__icontains = keyword)).order_by('created_date')
+            products_count = products.count()
+            paginator = Paginator(products, 6)
+            page = request.GET.get('page')
+            paged_products = paginator.get_page(page)
+            context = {
+                'products': paged_products,
+                'products_count': products_count
+            }
+        else:
+            context = {
+                'products': None,
+                'products_count': 0
+            }
+
+    return render(request, 'store/store.html', context)
